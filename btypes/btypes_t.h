@@ -1,10 +1,7 @@
 ﻿///
-/// (C) 2018 CHIV
+/// (C) 2018 Hozmedical
 ///
 /// @file btypes_t.h
-/// @author chiv
-/// @brief 提供一些方便使用的类, 如果需要使用专业的运动学或者线代运算, 这里的代码并不能够提供足够
-///        的性能.
 ///
 #pragma once
 
@@ -349,7 +346,7 @@ public:
         if (len == -1) {
             len = mCount - from;
         }
-        btypes::Array slice; slice.Resize(len);
+        btypes::Array<T> slice; slice.Resize(len);
         for (int k = 0; k < len; ++k) {
             slice[k] = mArray[from + k];
         }
@@ -541,6 +538,8 @@ public:
         mArray.Resize(col_count * row_count);
         mCount[0] = row_count;
         mCount[1] = col_count;
+        // After resize, reset the shift count to enable shift operations again.
+        mShiftCount = 0;
     }
     //
     void SetIdentity()
@@ -677,7 +676,7 @@ public:
     template <int M>
     Mat operator*(const Mat<T, M>& mat_) const
     {
-        assert(mCount[1] == mat_.mCount[0]);
+        assert(mCount[1] == mat_.Count(0));
         Mat result(mCount[0], mat_.Count(1));
         result.SetZero(); // 设置0
         // let's go.
@@ -693,6 +692,15 @@ public:
         //
         return (Mat &&)result;
     }
+    //
+    btypes::Array<T> operator*(const btypes::Array<T>& v) const
+    {
+        assert(Count()[1] == v.Size());
+        btypes::Mat<T> p(v.Size(), 1);
+        p.UpdateCol(0, v);
+        return (*this * p).GetCol(0);
+    }
+
     enum MatrixError {
         E_OK,
         E_BAD_MATRIX,
